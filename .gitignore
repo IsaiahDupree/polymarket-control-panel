@@ -1,0 +1,28 @@
+# --- secrets & machine-local config (NEVER commit) ---
+config/accounts.json
+config/panel.env
+*.env
+.env*
+!*.example.env
+!config/panel.example.env
+
+# --- runtime data ---
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+*.jsonl
+*.log
+
+# --- python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- swift / macOS ---
+native/.build/
+native/*.app
+*.xcodeproj
+.DS_Store

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polymarket Control Panel</title>
+<style>
+:root{
+  --bg:#141C27; --panel:#1D2B39; --panel2:#22334A; --border:#2C3F54;
+  --text:#E6EDF5; --muted:#7E8DA0; --blue:#2D9CDB; --blue-dim:#1F6FA0;
+  --green:#27AE60; --green-bg:rgba(39,174,96,.12);
+  --red:#E64A45; --red-bg:rgba(230,74,69,.12);
+  --yellow:#F2C94C; --radius:12px;
+  font-synthesis:none;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);
+  font-family:Inter,-apple-system,"SF Pro Text",Segoe UI,Roboto,sans-serif;
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;border-radius:8px;color:var(--text)}
+input,select{font:inherit;color:var(--text);background:var(--panel2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 10px;outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+::selection{background:var(--blue-dim)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:22px;
+  padding:0 22px;height:58px;background:var(--panel);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:.2px}
+.logo .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--blue),#7B61FF);
+  display:grid;place-items:center;font-size:13px;color:#fff}
+.tabs{display:flex;gap:4px;height:100%}
+.tab{display:flex;align-items:center;padding:0 14px;color:var(--muted);font-weight:600;
+  border-bottom:2px solid transparent;background:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);border-bottom-color:var(--blue)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.bad{background:var(--red)}
+.nav-bal{font-weight:700;font-size:15px}
+
+/* ---------- layout ---------- */
+main{max-width:1240px;margin:0 auto;padding:22px}
+section{display:none}
+section.active{display:block}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.grid{display:grid;gap:16px}
+h2{font-size:17px;font-weight:700;margin-bottom:12px}
+h3{font-size:14px;font-weight:700}
+.muted{color:var(--muted)} .sm{font-size:12px}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12px}
+
+/* ---------- portfolio hero ---------- */
+.hero{display:flex;flex-direction:column;gap:6px}
+.hero-top{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.big-bal{font-size:34px;font-weight:800;letter-spacing:-.5px}
+.chg{padding:3px 10px;border-radius:999px;font-weight:700;font-size:13px}
+.chg.up{color:var(--green);background:var(--green-bg)}
+.chg.down{color:var(--red);background:var(--red-bg)}
+.ranges{margin-left:auto;display:flex;gap:4px}
+.rangebtn{padding:5px 12px;border-radius:8px;background:none;color:var(--muted);font-weight:700;font-size:12px}
+.rangebtn:hover{background:var(--panel2);color:var(--text)}
+.rangebtn.active{background:var(--panel2);color:var(--blue)}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap canvas{width:100%;display:block}
+.tooltip{position:absolute;pointer-events:none;background:#0E141D;border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;font-size:12px;display:none;z-index:10;white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.4)}
+
+/* ---------- account cards ---------- */
+.acct-grid{grid-template-columns:repeat(auto-fill,minmax(272px,1fr))}
+.acct{display:flex;flex-direction:column;gap:9px;transition:border-color .15s}
+.acct:hover{border-color:var(--blue-dim)}
+.acct-head{display:flex;align-items:center;gap:9px}
+.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  font-weight:800;font-size:13px;color:#fff}
+.acct-bal{font-size:24px;font-weight:800}
+.acct-stats{display:flex;gap:14px;color:var(--muted);font-size:12px;font-weight:600}
+.acct-stats b{color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--border);color:var(--muted)}
+.chip.live{color:var(--red);border-color:var(--red);background:var(--red-bg)}
+.chip.paper{color:var(--blue);border-color:var(--blue-dim)}
+.kill{margin-top:auto;background:var(--red-bg);color:var(--red);font-weight:700;padding:8px;border:1px solid transparent}
+.kill:hover{border-color:var(--red)}
+
+/* ---------- strategies ---------- */
+.strat-layout{grid-template-columns:340px 1fr}
+.strat-item{padding:13px 14px;border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:9px;background:var(--panel)}
+.strat-item:hover{border-color:var(--blue-dim)}
+.strat-item.sel{border-color:var(--blue);background:var(--panel2)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px;margin:13px 0}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select{width:100%}
+.switch{display:flex;align-items:center;gap:8px;padding:7px 0;font-weight:600;cursor:pointer;user-select:none}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.btn{padding:9px 16px;font-weight:700;border-radius:9px;background:var(--panel2);border:1px solid var(--border)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost-danger{background:var(--red-bg);color:var(--red);border:1px solid transparent}
+.btn.ghost-danger:hover{border-color:var(--red)}
+.preview{background:#0E141D;border:1px solid var(--border);border-radius:9px;padding:11px;
+  font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#9FD4A8;overflow-x:auto;white-space:pre-wrap;margin-top:11px}
+table{width:100%;border-collapse:collapse}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;text-align:left;
+  padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:rgba(45,156,219,.04)}
+.tag{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.tag.live{color:var(--red);background:var(--red-bg)}
+.tag.paper{color:var(--blue);background:rgba(45,156,219,.12)}
+
+/* ---------- modal / toast ---------- */
+.overlay{position:fixed;inset:0;background:rgba(8,12,18,.7);display:none;place-items:center;z-index:100}
+.overlay.open{display:grid}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;width:430px;max-width:92vw}
+.modal h3{margin-bottom:9px;font-size:16px}
+#toasts{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:9px;z-index:200}
+.toast{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--blue);
+  border-radius:9px;padding:11px 15px;font-size:13px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+  animation:slidein .18s ease}
+.toast.err{border-left-color:var(--red)} .toast.ok{border-left-color:var(--green)}
+@keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.loading{color:var(--muted);padding:26px;text-align:center}
+pre.logs{background:#0E141D;border:1px solid var(--border);border-radius:10px;padding:13px;
+  font-size:12px;font-family:ui-monospace,Menlo,monospace;max-height:520px;overflow:auto;white-space:pre-wrap}
+@media(max-width:900px){.strat-layout{grid-template-columns:1fr}.big-bal{font-size:27px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="mark">▲</div>Control Panel</div>
+  <div class="tabs">
+    <button class="tab active" data-tab="portfolio">Portfolio</button>
+    <button class="tab" data-tab="strategies">Strategies</button>
+    <button class="tab" data-tab="markets">Markets</button>
+    <button class="tab" data-tab="logs">Logs</button>
+    <button class="tab" data-tab="audit">Audit</button>
+  </div>
+  <div class="nav-right">
+    <span class="pill"><span class="dot" id="proxyDot"></span><span id="proxyTxt">proxy…</span></span>
+    <span class="pill"><span class="dot" id="healthDot"></span><span id="healthTxt">connecting…</span></span>
+    <span class="nav-bal" id="navBal"></span>
+  </div>
+</nav>
+
+<main>
+<!-- ================= PORTFOLIO ================= -->
+<section id="portfolio" class="active">
+  <div class="card hero" style="margin-bottom:16px">
+    <div class="hero-top">
+      <div>
+        <div class="muted sm" style="font-weight:700;text-transform:uppercase;letter-spacing:.6px">Portfolio value</div>
+        <div class="big-bal" id="totalBal">—</div>
+      </div>
+      <span class="chg up" id="totalChg" style="display:none"></span>
+      <div class="ranges" id="ranges"></div>
+    </div>
+    <div class="chart-wrap"><canvas id="portfolioChart" height="240"></canvas><div class="tooltip" id="tt1"></div></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:2fr 1fr;margin-bottom:16px">
+    <div class="card">
+      <h3 style="margin-bottom:9px">Running strategies <span class="muted sm">live vs paper</span></h3>
+      <div class="chart-wrap"><canvas id="stratChart" height="150"></canvas><div class="tooltip" id="tt2"></div></div>
+    </div>
+    <div class="card" id="stratNow"><h3 style="margin-bottom:9px">Active now</h3><div class="loading">…</div></div>
+  </div>
+
+  <div class="grid acct-grid" id="acctGrid"><div class="loading card">Loading accounts…</div></div>
+</section>
+
+<!-- ================= STRATEGIES ================= -->
+<section id="strategies">
+  <div class="grid strat-layout">
+    <div>
+      <h2>Catalog</h2>
+      <div id="stratList"></div>
+    </div>
+    <div>
+      <div class="card">
+        <h2 id="cfgTitle">Configure</h2>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr">
+          <div class="field"><label>Account</label><select id="cfgAccount"></select></div>
+          <div class="field"><label>Mode</label>
+            <select id="cfgLive"><option value="0">Paper</option><option value="1">LIVE (real money)</option></select>
+          </div>
+        </div>
+        <div class="form-grid" id="cfgParams"></div>
+        <div class="btnrow">
+          <button class="btn" id="btnPreview">Preview command</button>
+          <button class="btn primary" id="btnStart">Start</button>
+        </div>
+        <div class="preview" id="cmdPreview" style="display:none"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>Running</h2>
+        <table><thead><tr><th>Account</th><th>Strategy</th><th>Mode</th><th>PID</th><th>Uptime</th><th></th></tr></thead>
+        <tbody id="runningRows"><tr><td colspan="6" class="loading">…</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MARKETS ================= -->
+<section id="markets">
+  <div class="card">
+    <div style="display:flex;gap:9px;margin-bottom:13px">
+      <input id="mktSearch" placeholder="Search markets…" style="flex:1">
+      <button class="btn" id="mktGo">Search</button>
+    </div>
+    <table><thead><tr><th>Market</th><th>24h volume</th><th>Outcomes</th><th></th></tr></thead>
+    <tbody id="mktRows"><tr><td colspan="4" class="loading">Search or wait for top markets…</td></tr></tbody></table>
+  </div>
+  <div class="card" id="bookCard" style="margin-top:16px;display:none">
+    <h3 id="bookTitle" style="margin-bottom:9px"></h3>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div><h3 style="color:var(--green)">Bids</h3><table><tbody id="bidRows"></tbody></table></div>
+      <div><h3 style="color:var(--red)">Asks</h3><table><tbody id="askRows"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LOGS ================= -->
+<section id="logs">
+  <div class="card">
+    <div style="display:flex;gap:9px;margin-bottom:13px;align-items:center">
+      <select id="logAccount"></select>
+      <select id="logFile" style="flex:1"></select>
+      <button class="btn" id="logRefresh">Refresh</button>
+    </div>
+    <pre class="logs" id="logTail">Select an account…</pre>
+  </div>
+</section>
+
+<!-- ================= AUDIT ================= -->
+<section id="audit">
+  <div class="card">
+    <h2>Audit trail <span class="muted sm">every state-changing action</span></h2>
+    <table><thead><tr><th>Time</th><th>Action</th><th>Account</th><th>Detail</th></tr></thead>
+    <tbody id="auditRows"><tr><td colspan="4" class="loading">…</td></tr></tbody></table>
+  </div>
+</section>
+</main>
+
+<!-- confirm modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="mTitle">Confirm</h3>
+    <p class="muted" id="mBody" style="margin-bottom:16px"></p>
+    <div class="btnrow" style="justify-content:flex-end">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn danger" id="mOk">Confirm</button>
+    </div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* ============================ helpers ============================ */
+const $ = s => document.querySelector(s);
+const api = async (path, opts) => {
+  const r = await fetch(path, opts ? {headers:{"Content-Type":"application/json"}, ...opts} : undefined);
+  const j = await r.json().catch(()=> ({}));
+  if (!r.ok) throw new Error(j.detail || r.statusText);
+  return j;
+};
+const post = (path, body) => api(path, {method:"POST", body: JSON.stringify(body)});
+const fmt$ = v => v==null ? "—" : "$" + Number(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(msg, kind="") {
+  const d = document.createElement("div"); d.className = "toast "+kind; d.textContent = msg;
+  $("#toasts").appendChild(d); setTimeout(()=>d.remove(), 5200);
+}
+function confirmModal(title, body) {
+  return new Promise(res => {
+    $("#mTitle").textContent = title; $("#mBody").textContent = body;
+    $("#overlay").classList.add("open");
+    const done = v => { $("#overlay").classList.remove("open"); res(v); };
+    $("#mOk").onclick = ()=>done(true); $("#mCancel").onclick = ()=>done(false);
+  });
+}
+const AVATAR_COLORS = ["#2D9CDB","#7B61FF","#27AE60","#F2994A","#EB5757","#56CCF2"];
+const avatarColor = id => AVATAR_COLORS[[...id].reduce((a,c)=>a+c.charCodeAt(0),0)%AVATAR_COLORS.length];
+
+/* ============================ mini chart engine ============================ */
+/* Dependency-free canvas line chart: gradient fill, crosshair, tooltip. */
+class MiniChart {
+  constructor(canvas, tooltip, opts={}) {
+    this.c = canvas; this.tt = tooltip; this.o = opts; this.series = [];
+    this.hover = null;
+    canvas.addEventListener("mousemove", e => this._onMove(e));
+    canvas.addEventListener("mouseleave", () => { this.hover=null; this.tt.style.display="none"; this.draw(); });
+    new ResizeObserver(()=>this.draw()).observe(canvas.parentElement);
+  }
+  setData(series) { this.series = series; this.draw(); }
+  _scale() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = this.c.parentElement.clientWidth, h = this.c.getAttribute("height")*1;
+    this.c.width = w*dpr; this.c.height = h*dpr; this.c.style.height = h+"px";
+    const ctx = this.c.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {ctx, w, h};
+  }
+  _ext() {
+    let xs=[], ys=[];
+    for (const s of this.series) for (const p of s.points) { xs.push(p.x); ys.push(p.y); }
+    if (!xs.length) return null;
+    let x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+    if (x0===x1) x1=x0+1;
+    const pad=(y1-y0)*0.12 || Math.abs(y1)*0.05 || 1; y0-=pad; y1+=pad;
+    return {x0,x1,y0,y1};
+  }
+  draw() {
+    const {ctx,w,h} = this._scale(); ctx.clearRect(0,0,w,h);
+    const e = this._ext();
+    const padL=46, padB=18, padT=6;
+    if (!e) { ctx.fillStyle="#7E8DA0"; ctx.font="12px Inter"; ctx.fillText("Collecting history…", w/2-55, h/2); return; }
+    const X = x => padL + (x-e.x0)/(e.x1-e.x0)*(w-padL-8);
+    const Y = y => padT + (1-(y-e.y0)/(e.y1-e.y0))*(h-padT-padB);
+    this._X=X; this._Y=Y; this._e=e; this._w=w; this._h=h;
+    // gridlines + y labels
+    ctx.font="10px Inter"; ctx.fillStyle="#7E8DA0"; ctx.strokeStyle="rgba(44,63,84,.6)"; ctx.lineWidth=1;
+    for (let i=0;i<=3;i++) {
+      const yv = e.y0 + (e.y1-e.y0)*i/3, y = Y(yv);
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-8,y); ctx.stroke();
+      ctx.fillText(this.o.yFmt ? this.o.yFmt(yv) : yv.toFixed(0), 4, y+3);
+    }
+    // x labels
+    for (let i=0;i<=4;i++) {
+      const xv = e.x0+(e.x1-e.x0)*i/4;
+      const d = new Date(xv*1000);
+      const lbl = (e.x1-e.x0) > 86400*2 ? (d.getMonth()+1)+"/"+d.getDate()
+                : d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
+      ctx.fillText(lbl, Math.min(X(xv), w-34), h-4);
+    }
+    // series
+    for (const s of this.series) {
+      if (!s.points.length) continue;
+      const pts = s.points;
+      ctx.beginPath();
+      pts.forEach((p,i)=>{ const x=X(p.x), y=Y(p.y);
+        if (i===0) ctx.moveTo(x,y);
+        else if (s.stepped) { ctx.lineTo(x, Y(pts[i-1].y)); ctx.lineTo(x,y); }
+        else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle=s.color; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.stroke();
+      if (s.fill!==false) {
+        const g=ctx.createLinearGradient(0,padT,0,h-padB);
+        g.addColorStop(0, s.color+"55"); g.addColorStop(1, s.color+"00");
+        ctx.lineTo(X(pts[pts.length-1].x), h-padB); ctx.lineTo(X(pts[0].x), h-padB);
+        ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+      }
+    }
+    // hover crosshair
+    if (this.hover!=null) {
+      ctx.strokeStyle="rgba(230,237,245,.35)"; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(this.hover,padT); ctx.lineTo(this.hover,h-padB); ctx.stroke(); ctx.setLineDash([]);
+      for (const s of this.series) {
+        const p = this._nearest(s.points, this.hover);
+        if (p) { ctx.beginPath(); ctx.arc(X(p.x),Y(p.y),3.5,0,7); ctx.fillStyle=s.color; ctx.fill();
+                 ctx.strokeStyle="#fff"; ctx.lineWidth=1.2; ctx.stroke(); }
+      }
+    }
+  }
+  _nearest(pts, px) {
+    if (!pts.length || !this._X) return null;
+    let best=null, bd=1e18;
+    for (const p of pts) { const d=Math.abs(this._X(p.x)-px); if (d<bd){bd=d;best=p;} }
+    return best;
+  }
+  _onMove(e) {
+    if (!this._e) return;
+    const r = this.c.getBoundingClientRect(); this.hover = e.clientX-r.left; this.draw();
+    const lines = this.series.map(s=>{
+      const p=this._nearest(s.points,this.hover);
+      return p ? `<span style="color:${s.color}">●</span> ${esc(s.label)}: <b>${this.o.yFmt?this.o.yFmt(p.y):p.y}</b>` : "";
+    }).filter(Boolean);
+    const p0 = this._nearest(this.series[0]?.points||[], this.hover);
+    if (!lines.length || !p0) { this.tt.style.display="none"; return; }
+    this.tt.innerHTML = `<div class="muted">${new Date(p0.x*1000).toLocaleString()}</div>`+lines.join("<br>");
+    this.tt.style.display="block";
+    const ttw = this.tt.offsetWidth;
+    this.tt.style.left = Math.min(this.hover+14, this._w-ttw-6)+"px";
+    this.tt.style.top = "12px";
+  }
+}
+
+/* ============================ state ============================ */
+const S = { accounts: [], catalog: [], selStrat: null, hours: 24, health: null };
+const portfolioChart = new MiniChart($("#portfolioChart"), $("#tt1"), {yFmt: v=>fmt$(v)});
+const stratChart = new MiniChart($("#stratChart"), $("#tt2"), {yFmt: v=>Math.round(v)});
+
+/* ============================ tabs ============================ */
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active", x===t));
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("active", s.id===t.dataset.tab));
+  if (t.dataset.tab==="audit") loadAudit();
+  if (t.dataset.tab==="markets" && !$("#mktRows").dataset.loaded) loadMarkets();
+});
+
+/* ============================ ranges ============================ */
+const RANGES = [["1H",1],["6H",6],["1D",24],["1W",168],["1M",720],["ALL",87600]];
+RANGES.forEach(([lbl,h],i)=>{
+  const b=document.createElement("button"); b.className="rangebtn"+(h===24?" active":""); b.textContent=lbl;
+  b.onclick=()=>{ S.hours=h; document.querySelectorAll(".rangebtn").forEach(x=>x.classList.toggle("active",x===b)); loadHistory(); };
+  $("#ranges").appendChild(b);
+});
+
+/* ============================ health ============================ */
+async function loadHealth() {
+  try {
+    const h = await api("/api/health"); S.health=h;
+    $("#healthDot").className="dot ok"; $("#healthTxt").textContent="backend";
+    $("#proxyDot").className="dot "+(h.proxy_on?"ok":"bad");
+    $("#proxyTxt").textContent = h.proxy_on ? "proxy "+(h.proxy_exit||"") : "no proxy";
+  } catch { $("#healthDot").className="dot bad"; $("#healthTxt").textContent="offline"; }
+}
+
+/* ============================ accounts ============================ */
+async function loadAccounts() {
+  try {
+    const j = await api("/api/accounts");
+    S.accounts = j.accounts || [];
+    renderAccounts(); renderActiveNow(); fillAccountSelects();
+    const tot = S.accounts.reduce((a,r)=>a+(r.balance_usd||0),0);
+    $("#navBal").textContent = fmt$(tot);
+    $("#totalBal").textContent = fmt$(tot);
+  } catch(e) { /* backend warming */ }
+}
+function renderAccounts() {
+  const g = $("#acctGrid"); g.innerHTML="";
+  if (!S.accounts.length) { g.innerHTML = `<div class="card loading">No accounts configured — copy config/accounts.example.json → config/accounts.json</div>`; return; }
+  for (const a of S.accounts) {
+    const strats_ = a.running_strats||[];
+    const live = strats_.filter(s=>s.live), paper = strats_.filter(s=>!s.live);
+    const card = document.createElement("div"); card.className="card acct";
+    card.innerHTML = `
+      <div class="acct-head">
+        <div class="avatar" style="background:${avatarColor(a.id)}">${esc(a.name.slice(0,2).toUpperCase())}</div>
+        <div><b>${esc(a.name)}</b><div class="muted sm mono">${esc((a.funder||"").slice(0,6))}…${esc((a.funder||"").slice(-4))}</div></div>
+        <span class="chg sm" id="chg-${a.id}" style="margin-left:auto;display:none"></span>
+      </div>
+      <div class="acct-bal">${a.balance_usd!=null?fmt$(a.balance_usd):`<span class="muted sm">${esc(a.error||a.balance_error||"no data")}</span>`}</div>
+      <div class="acct-stats">
+        <span><b>${a.positions_n??0}</b> positions</span>
+        <span><b>${a.open_orders_n??0}</b> orders</span>
+        ${a.positions_value?`<span><b>${fmt$(a.positions_value)}</b> in mkts</span>`:""}
+      </div>
+      <div class="chips">
+        ${live.map(s=>`<span class="chip live">LIVE ${esc(s.strat_key||s.module)}</span>`).join("")}
+        ${paper.length?`<span class="chip paper">${paper.length} paper</span>`:""}
+        ${!strats_.length?`<span class="chip">idle</span>`:""}
+      </div>
+      <div class="chart-wrap"><canvas id="spark-${a.id}" height="64"></canvas><div class="tooltip" id="stt-${a.id}"></div></div>
+      <button class="kill" data-acct="${esc(a.id)}">Kill switch</button>`;
+    g.appendChild(card);
+    card.querySelector(".kill").onclick = async ev => {
+      const id = ev.target.dataset.acct;
+      if (!await confirmModal("Kill switch: "+id, "Cancel ALL open orders and STOP every strategy on this account. This acts on real orders.")) return;
+      try { await post(`/api/accounts/${id}/kill_switch`, {confirm:true}); toast("Kill switch fired for "+id, "ok"); loadAccounts(); }
+      catch(e){ toast(e.message, "err"); }
+    };
+    const mc = new MiniChart(card.querySelector(`#spark-${CSS.escape(a.id)}`), card.querySelector(`#stt-${CSS.escape(a.id)}`), {yFmt:v=>fmt$(v)});
+    api(`/api/history/balances?account=${a.id}&hours=${S.hours}`).then(h=>{
+      mc.setData([{label:a.name,color:"#2D9CDB",points:h.series.map(p=>({x:p.ts,y:p.balance_usd}))}]);
+      const el = card.querySelector(`#chg-${CSS.escape(a.id)}`);
+      if (h.change?.has_data) {
+        const up = h.change.delta>=0;
+        el.textContent = `${up?"▲":"▼"} ${fmt$(Math.abs(h.change.delta))} (${Math.abs(h.change.pct)}%)`;
+        el.className = "chg sm "+(up?"up":"down"); el.style.display="inline-block";
+      }
+    }).catch(()=>{});
+  }
+}
+function renderActiveNow() {
+  const rows=[];
+  for (const a of S.accounts) for (const s of (a.running_strats||[]))
+    rows.push(`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span class="tag ${s.live?"live":"paper"}">${s.live?"LIVE":"PAPER"}</span>
+      <b>${esc(s.label||s.module)}</b><span class="muted sm">${esc(a.name)} · up ${esc(s.etime||"?")}</span></div>`);
+  $("#stratNow").innerHTML = `<h3 style="margin-bottom:9px">Active now</h3>`+(rows.length?rows.join(""):`<div class="muted">Nothing running.</div>`);
+}
+
+/* ============================ history charts ============================ */
+async function loadHistory() {
+  try {
+    const [bal, st] = await Promise.all([
+      api(`/api/history/balances?hours=${S.hours}`),
+      api(`/api/history/strats?hours=${S.hours}`),
+    ]);
+    portfolioChart.setData([{label:"Total", color:"#2D9CDB", points: bal.series.map(p=>({x:p.ts,y:p.balance_usd}))}]);
+    if (bal.change?.has_data) {
+      const up = bal.change.delta>=0, el=$("#totalChg");
+      el.textContent = `${up?"▲":"▼"} ${fmt$(Math.abs(bal.change.delta))} (${Math.abs(bal.change.pct)}%) 24h`;
+      el.className="chg "+(up?"up":"down"); el.style.display="inline-block";
+    }
+    stratChart.setData([
+      {label:"Live", color:"#E64A45", stepped:true, points: st.series.map(p=>({x:p.ts,y:p.live}))},
+      {label:"Paper", color:"#2D9CDB", stepped:true, points: st.series.map(p=>({x:p.ts,y:p.paper}))},
+    ]);
+    renderAccounts(); // refresh sparklines with new range
+  } catch {}
+}
+
+/* ============================ strategies ============================ */
+function fillAccountSelects() {
+  for (const sel of [$("#cfgAccount"), $("#logAccount")]) {
+    const cur = sel.value;
+    sel.innerHTML = S.accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("");
+    if (cur) sel.value = cur;
+  }
+}
+async function loadCatalog() {
+  const j = await api("/api/strats/catalog");
+  S.catalog = j.strats||[];
+  const list = $("#stratList"); list.innerHTML="";
+  S.catalog.forEach((s,i)=>{
+    const d=document.createElement("div"); d.className="strat-item"+(i===0?" sel":"");
+    d.innerHTML=`<b>${esc(s.label)}</b><div class="muted sm" style="margin-top:3px">${esc(s.desc)}</div>`;
+    d.onclick=()=>{ document.querySelectorAll(".strat-item").forEach(x=>x.classList.remove("sel")); d.classList.add("sel"); selectStrat(s); };
+    list.appendChild(d);
+  });
+  if (S.catalog.length) selectStrat(S.catalog[0]);
+  if (!j.enabled) toast("Strat launching disabled on this backend (read-only). Set EDGEOS_REPO/EDGEOS_PYBIN.", "err");
+}
+function selectStrat(s) {
+  S.selStrat = s;
+  $("#cfgTitle").textContent = "Configure — "+s.label;
+  const g = $("#cfgParams"); g.innerHTML="";
+  for (const p of s.params) {
+    const f=document.createElement("div"); f.className="field";
+    if (p.type==="bool") {
+      f.innerHTML=`<label>${esc(p.name)}</label><label class="switch"><input type="checkbox" data-p="${esc(p.name)}" ${p.default?"checked":""}> <span class="muted sm">${esc(p.help)}</span></label>`;
+    } else if (p.type==="choice") {
+      f.innerHTML=`<label>${esc(p.name)} <span class="muted">— ${esc(p.help)}</span></label>
+        <select data-p="${esc(p.name)}">${p.choices.map(c=>`<option ${c==p.default?"selected":""}>${esc(c)}</option>`).join("")}</select>`;
+    } else {
+      f.innerHTML=`<label>${esc(p.name)} <span class="muted">— ${esc(p.help)}</span></label>
+        <input data-p="${esc(p.name)}" type="number" step="${p.type==="float"?"0.001":"1"}" value="${esc(p.default)}">`;
+    }
+    g.appendChild(f);
+  }
+  $("#cmdPreview").style.display="none";
+}
+function gatherParams() {
+  const out={};
+  document.querySelectorAll("#cfgParams [data-p]").forEach(el=>{
+    out[el.dataset.p] = el.type==="checkbox" ? el.checked : el.value;
+  });
+  return out;
+}
+$("#btnPreview").onclick = async () => {
+  try {
+    const r = await post("/api/strats/start", {account:$("#cfgAccount").value, strat:S.selStrat.key,
+      params:gatherParams(), live:$("#cfgLive").value==="1", dryRun:true});
+    $("#cmdPreview").style.display="block"; $("#cmdPreview").textContent = r.command;
+  } catch(e){ toast(e.message,"err"); }
+};
+$("#btnStart").onclick = async () => {
+  const live = $("#cfgLive").value==="1", acct=$("#cfgAccount").value;
+  if (live && !await confirmModal("Start LIVE strategy",
+      `${S.selStrat.label} will trade with REAL MONEY on "${acct}". Are you sure?`)) return;
+  try {
+    const r = await post("/api/strats/start", {account:acct, strat:S.selStrat.key,
+      params:gatherParams(), live, dryRun:false, confirm:live});
+    toast(`Started ${S.selStrat.key} (${live?"LIVE":"paper"}) pid ${r.pid}`, "ok");
+    loadRunning();
+  } catch(e){ toast(e.message,"err"); }
+};
+async function loadRunning() {
+  try {
+    const j = await api("/api/strats/running");
+    const rows=[];
+    for (const [acct, list] of Object.entries(j.running||{})) for (const s of list) {
+      rows.push(`<tr><td>${esc(acct)}</td><td>${esc(s.label||s.module)}</td>
+        <td><span class="tag ${s.live?"live":"paper"}">${s.live?"LIVE":"PAPER"}</span></td>
+        <td class="mono">${esc(s.pid)}</td><td>${esc(s.etime||"")}</td>
+        <td style="text-align:right">
+          <button class="btn sm" data-a="${esc(acct)}" data-s="${esc(s.strat_key||"")}" data-m="stop">Stop</button>
+          <button class="btn ghost-danger sm" data-a="${esc(acct)}" data-s="${esc(s.strat_key||"")}" data-m="kill">Kill</button>
+        </td></tr>`);
+    }
+    $("#runningRows").innerHTML = rows.length?rows.join(""):`<tr><td colspan="6" class="muted">Nothing running.</td></tr>`;
+    $("#runningRows").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
+      if (!b.dataset.s) return toast("This proc isn't in the catalog; use Kill switch on the account card.","err");
+      if (b.dataset.m==="kill" && !await confirmModal("Kill process", `SIGTERM ${b.dataset.s} on ${b.dataset.a}?`)) return;
+      try { await post("/api/strats/stop",{account:b.dataset.a,strat:b.dataset.s,mode:b.dataset.m,confirm:true});
+        toast(`${b.dataset.m} sent`,"ok"); setTimeout(loadRunning,1200);
+      } catch(e){ toast(e.message,"err"); }
+    });
+  } catch {}
+}
+
+/* ============================ markets ============================ */
+async function loadMarkets() {
+  $("#mktRows").dataset.loaded="1";
+  $("#mktRows").innerHTML=`<tr><td colspan="4" class="loading">Loading…</td></tr>`;
+  try {
+    const j = await api("/api/markets?q="+encodeURIComponent($("#mktSearch").value)+"&limit=30");
+    const rows=(j.markets||[]).map((m,i)=>`<tr><td>${esc(m.question)}</td>
+      <td>${fmt$(m.volume24hr)}</td><td class="sm muted">${esc(m.outcomes||"")}</td>
+      <td>${(m.clobTokenIds||[]).map((t,k)=>`<button class="btn sm" data-t="${esc(t)}" data-q="${esc(m.question)} [${k}]">book</button>`).join(" ")}</td></tr>`);
+    $("#mktRows").innerHTML = rows.length?rows.join(""):`<tr><td colspan="4" class="muted">No results.</td></tr>`;
+    $("#mktRows").querySelectorAll("button").forEach(b=>b.onclick=()=>loadBook(b.dataset.t, b.dataset.q));
+  } catch(e){ $("#mktRows").innerHTML=`<tr><td colspan="4" class="muted">${esc(e.message)}</td></tr>`; }
+}
+async function loadBook(token, title) {
+  $("#bookCard").style.display="block"; $("#bookTitle").textContent=title;
+  try {
+    const j = await api("/api/book?token="+encodeURIComponent(token));
+    const row = (o,c) => `<tr><td style="color:${c}">${esc(o.price)}</td><td>${esc(o.size)}</td></tr>`;
+    $("#bidRows").innerHTML = (j.book.bids||[]).map(o=>row(o,"var(--green)")).join("") || "<tr><td class='muted'>empty</td></tr>";
+    $("#askRows").innerHTML = (j.book.asks||[]).map(o=>row(o,"var(--red)")).join("") || "<tr><td class='muted'>empty</td></tr>";
+  } catch(e){ toast(e.message,"err"); }
+}
+$("#mktGo").onclick=loadMarkets;
+$("#mktSearch").addEventListener("keydown",e=>{if(e.key==="Enter")loadMarkets();});
+
+/* ============================ logs ============================ */
+async function loadLogFiles() {
+  const acct=$("#logAccount").value; if(!acct) return;
+  try {
+    const j = await api(`/api/logs?account=${acct}`);
+    $("#logFile").innerHTML=(j.logs||[]).map(f=>`<option value="${esc(f.name)}">${esc(f.name)} (${(f.size/1024).toFixed(0)}k)</option>`).join("");
+    loadLogTail();
+  } catch {}
+}
+async function loadLogTail() {
+  const acct=$("#logAccount").value, name=$("#logFile").value; if(!acct||!name) return;
+  try { const j = await api(`/api/logs?account=${acct}&name=${encodeURIComponent(name)}&lines=300`);
+    const el=$("#logTail"); el.textContent=j.tail||"(empty)"; el.scrollTop=el.scrollHeight;
+  } catch {}
+}
+$("#logAccount").onchange=loadLogFiles; $("#logFile").onchange=loadLogTail; $("#logRefresh").onclick=loadLogTail;
+
+/* ============================ audit ============================ */
+async function loadAudit() {
+  try {
+    const j = await api("/api/audit?n=200");
+    $("#auditRows").innerHTML = (j.audit||[]).map(a=>`<tr><td class="sm mono">${esc(a.iso)}</td>
+      <td><b>${esc(a.action)}</b></td><td>${esc(a.account)}</td>
+      <td class="sm mono muted">${esc(JSON.stringify(a.detail)).slice(0,140)}</td></tr>`).join("")
+      || `<tr><td colspan="4" class="muted">No audit entries yet.</td></tr>`;
+  } catch {}
+}
+
+/* ============================ boot & poll ============================ */
+loadHealth(); loadAccounts(); loadCatalog(); loadRunning(); loadHistory(); loadLogFiles();
+setInterval(loadAccounts, 8000);
+setInterval(loadRunning, 10000);
+setInterval(loadHealth, 30000);
+setInterval(loadHistory, 60000);
+</script>
+</body>
+</html>

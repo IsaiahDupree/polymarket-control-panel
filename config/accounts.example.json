@@ -1,0 +1,21 @@
+{
+  "_comment": "Copy to accounts.json (gitignored). Pointers only — secrets stay in each account's own mode-600 .env file.",
+  "accounts": [
+    {
+      "id": "main",
+      "name": "Main account",
+      "funder": "0xYourPolymarketProxyWallet",
+      "signer": "0xYourSignerAddress",
+      "env": "~/path/to/account/.env",
+      "state_dir": "~/.edgeos"
+    },
+    {
+      "id": "second",
+      "name": "Second account",
+      "funder": "0x...",
+      "signer": "0x...",
+      "env": "~/path/to/second/.env",
+      "state_dir": "~/.edgeos-second"
+    }
+  ]
+}

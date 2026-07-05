@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 340" font-family="Inter,-apple-system,Segoe UI,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#7E8DA0"/></marker>
+  </defs>
+  <rect width="860" height="340" fill="#141C27" rx="12"/>
+
+  <!-- clients -->
+  <rect x="30" y="30" width="180" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="120" y="57" fill="#E6EDF5" font-size="14" font-weight="700" text-anchor="middle">Web dashboard</text>
+  <text x="120" y="76" fill="#7E8DA0" font-size="11" text-anchor="middle">Polymarket-style UI</text>
+
+  <rect x="30" y="118" width="180" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="120" y="145" fill="#E6EDF5" font-size="14" font-weight="700" text-anchor="middle">Native macOS app</text>
+  <text x="120" y="164" fill="#7E8DA0" font-size="11" text-anchor="middle">menu bar + WKWebView</text>
+
+  <rect x="30" y="206" width="180" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="120" y="233" fill="#E6EDF5" font-size="14" font-weight="700" text-anchor="middle">AI agents</text>
+  <text x="120" y="252" fill="#7E8DA0" font-size="11" text-anchor="middle">MCP server / OpenAPI</text>
+
+  <!-- backend -->
+  <rect x="330" y="30" width="240" height="240" rx="12" fill="#1D2B39" stroke="#2D9CDB"/>
+  <text x="450" y="60" fill="#E6EDF5" font-size="15" font-weight="800" text-anchor="middle">FastAPI backend :8799</text>
+  <text x="450" y="88" fill="#7E8DA0" font-size="12" text-anchor="middle">guarded writes · audit log</text>
+  <text x="450" y="108" fill="#7E8DA0" font-size="12" text-anchor="middle">parallel polling · SWR cache</text>
+  <rect x="352" y="128" width="196" height="54" rx="8" fill="#22334A"/>
+  <text x="450" y="150" fill="#E6EDF5" font-size="12" font-weight="700" text-anchor="middle">SQLite history recorder</text>
+  <text x="450" y="168" fill="#7E8DA0" font-size="11" text-anchor="middle">balances · live/paper strats</text>
+  <rect x="352" y="194" width="196" height="54" rx="8" fill="#22334A"/>
+  <text x="450" y="216" fill="#E6EDF5" font-size="12" font-weight="700" text-anchor="middle">strategy lifecycle</text>
+  <text x="450" y="234" fill="#7E8DA0" font-size="11" text-anchor="middle">start / stop / kill · logs</text>
+
+  <!-- upstream -->
+  <rect x="670" y="30" width="160" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="750" y="57" fill="#E6EDF5" font-size="13" font-weight="700" text-anchor="middle">Polymarket CLOB</text>
+  <text x="750" y="76" fill="#7E8DA0" font-size="11" text-anchor="middle">via non-US proxy</text>
+
+  <rect x="670" y="118" width="160" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="750" y="145" fill="#E6EDF5" font-size="13" font-weight="700" text-anchor="middle">edgeos strats</text>
+  <text x="750" y="164" fill="#7E8DA0" font-size="11" text-anchor="middle">per-account state dirs</text>
+
+  <rect x="670" y="206" width="160" height="64" rx="10" fill="#1D2B39" stroke="#2C3F54"/>
+  <text x="750" y="233" fill="#E6EDF5" font-size="13" font-weight="700" text-anchor="middle">account .envs</text>
+  <text x="750" y="252" fill="#7E8DA0" font-size="11" text-anchor="middle">secrets never committed</text>
+
+  <!-- arrows -->
+  <line x1="210" y1="62" x2="326" y2="90" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="210" y1="150" x2="326" y2="150" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="210" y1="238" x2="326" y2="210" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="570" y1="90" x2="666" y2="62" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="570" y1="150" x2="666" y2="150" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="570" y1="210" x2="666" y2="238" stroke="#7E8DA0" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <text x="430" y="316" fill="#7E8DA0" font-size="12" text-anchor="middle">everything local — 127.0.0.1 only</text>
+</svg>
