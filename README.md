@@ -8,14 +8,14 @@ Everything runs on `127.0.0.1`. Nothing leaves your machine except the trading c
 
 ## What you get
 
-**Dashboard** (`http://127.0.0.1:8799`) — dark Polymarket-style UI:
+**Native macOS app** (`native/PolyPanel.app`) — the primary UI. Fully native SwiftUI with Swift Charts, Polymarket-style dark theme, menu-bar extra with live balance + portfolio sparkline, and backend auto-start. Same five tabs as the web dashboard below, plus native confirm dialogs for every real-money action.
+
+**Web dashboard** (`http://127.0.0.1:8799`) — the same UI in the browser (also what remote/AI tooling can screenshot):
 
 - **Portfolio** — total value with 1H/6H/1D/1W/1M/ALL history chart and 24h change, per-account cards with balance sparklines, positions, open orders, running-strategy chips, and a per-account kill switch
 - **Strategies** — catalog with parameter forms, exact command preview, paper/LIVE start (LIVE requires an explicit confirm), running list with stop/kill
 - **Markets** — search active markets, view order books
 - **Logs / Audit** — strategy log tails and the append-only audit trail of every state-changing action
-
-**Native macOS app** (`native/`) — a thin SwiftUI shell (menu-bar + window) that auto-starts the backend and wraps the same dashboard in a WKWebView, with live balance in the menu bar.
 
 **History** — a background recorder snapshots balances, positions, and live/paper strategy counts into SQLite every 60s; all charts are backed by `/api/history/*`.
 
@@ -35,8 +35,8 @@ git clone <this repo>
 cd polymarket-control-panel
 cp config/accounts.example.json config/accounts.json   # add your accounts
 cp config/panel.example.env config/panel.env           # add your paths
-./start.sh                # backend + dashboard in browser
-./start.sh --native       # backend + native macOS app
+./start.sh                # backend + native macOS app (builds it on first run)
+./start.sh --web          # backend + dashboard in browser
 ```
 
 The panel reuses an existing trading stack rather than re-implementing order signing:
@@ -90,7 +90,7 @@ backend/          FastAPI :8799 — API + dashboard + history recorder
   static/         Polymarket-style dashboard (zero JS dependencies)
   tests/          pytest suite (mocked, CI-safe)
 mcp-server/       MCP stdio server exposing the API as agent tools
-native/           SwiftUI menu-bar app wrapping the dashboard (WKWebView)
+native/           native SwiftUI app (Swift Charts, menu-bar extra) — primary UI
 config/           accounts.json + panel.env (gitignored; examples provided)
 ```
 

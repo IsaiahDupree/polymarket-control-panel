@@ -1,6 +1,6 @@
 #!/bin/zsh
-# One-shot: start the backend (if not already up), then open the dashboard.
-# Add --native to open the menu-bar app instead of the browser.
+# One-shot: start the backend (if not already up), then open the native app.
+# Add --web to open the browser dashboard instead.
 set -e
 HERE="${0:A:h}"
 PORT=$(grep -E '^PANEL_PORT=' "$HERE/config/panel.env" 2>/dev/null | cut -d= -f2)
@@ -16,10 +16,10 @@ if ! curl -s --max-time 2 "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1; t
 fi
 echo "✓ backend up on http://127.0.0.1:$PORT"
 
-if [ "$1" = "--native" ]; then
+if [ "$1" = "--web" ]; then
+  open "http://127.0.0.1:$PORT"
+else
   APP="$HERE/native/PolyPanel.app"
   [ -d "$APP" ] || /bin/zsh "$HERE/native/make_app.sh"
   open "$APP"
-else
-  open "http://127.0.0.1:$PORT"
 fi
