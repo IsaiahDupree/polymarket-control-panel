@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum Tab: String, CaseIterable {
+enum Tab: String, CaseIterable, Equatable {
     case portfolio = "Portfolio"
     case strategies = "Strategies"
     case markets = "Markets"
@@ -33,6 +33,9 @@ struct RootView: View {
         .background(Theme.bg)
         .preferredColorScheme(.dark)
         .onAppear { store.bootstrap() }
+        .onChange(of: store.requestedTab) {
+            if let t = store.requestedTab { tab = t; store.requestedTab = nil }
+        }
     }
 
     private var topBar: some View {

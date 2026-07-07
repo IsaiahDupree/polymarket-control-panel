@@ -140,20 +140,22 @@ def balance_series(account_id: str | None, hours: float = 24) -> list[dict]:
              "live_strats": int(r[4] or 0), "paper_strats": int(r[5] or 0)} for r in rows]
 
 
-def strat_series(hours: float = 24) -> list[dict]:
-    """Per-bucket live/paper running-strat counts across all accounts."""
+def strat_series(hours: float = 24, account_id: str | None = None) -> list[dict]:
+    """Per-bucket live/paper running-strat counts, portfolio-wide or one account."""
     since = time.time() - hours * 3600
     step = _bucket(hours)
+    acct_filter = "AND account_id=?" if account_id else ""
+    params = (step, step, since) + ((account_id,) if account_id else ())
     conn = db()
     with _LOCK:
         cur = conn.execute(
-            """SELECT bucket, SUM(ls), SUM(ps) FROM (
+            f"""SELECT bucket, SUM(ls), SUM(ps) FROM (
                  SELECT CAST(ts/? AS INT)*? AS bucket, account_id,
                         MAX(live_strats) AS ls, MAX(paper_strats) AS ps
-                 FROM account_snapshots WHERE ts>=?
+                 FROM account_snapshots WHERE ts>=? {acct_filter}
                  GROUP BY bucket, account_id)
                GROUP BY bucket ORDER BY bucket""",
-            (step, step, since))
+            params)
         rows = cur.fetchall()
     return [{"ts": r[0], "live": int(r[1] or 0), "paper": int(r[2] or 0)} for r in rows]
 

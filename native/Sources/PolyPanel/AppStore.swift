@@ -26,6 +26,15 @@ final class AppStore: ObservableObject {
     @Published var stratActivity: [StratPoint] = []
     @Published var sparks: [String: [HistoryPoint]] = [:]
     @Published var sparkChanges: [String: Change] = [:]
+    @Published var positions: [String: [Position]] = [:]
+
+    /// Global 1s heartbeat — drives every countdown, ticking uptime, and
+    /// relative timestamp in the app.
+    @Published var now = Date()
+    /// When `accounts`/`running` were last fetched (baseline for uptime ticking).
+    @Published private(set) var fetchedAt = Date()
+    /// Cross-view navigation (e.g. KPI chips jump to a tab).
+    @Published var requestedTab: Tab?
 
     @Published var hours: Double = 24 {
         didSet { Task { await loadHistory() } }
@@ -42,6 +51,25 @@ final class AppStore: ObservableObject {
     }
     var liveCount: Int { accounts.reduce(0) { $0 + $1.liveStrats.count } }
     var paperCount: Int { accounts.reduce(0) { $0 + $1.paperStrats.count } }
+    var openOrdersCount: Int { accounts.reduce(0) { $0 + ($1.open_orders_n ?? 0) } }
+    var inMarketsTotal: Double {
+        positions.values.flatMap { $0 }.compactMap(\.currentValue).reduce(0, +)
+    }
+    var openPnlTotal: Double {
+        positions.values.flatMap { $0 }.compactMap(\.cashPnl).reduce(0, +)
+    }
+    /// All positions with account id, time-critical first: live countdowns
+    /// (soonest ending) → already-resolved (awaiting redeem) → no end time.
+    var positionsByUrgency: [(account: String, position: Position)] {
+        let ref = now
+        func rank(_ p: Position) -> (Int, Double) {
+            guard let e = p.end else { return (2, -(p.currentValue ?? 0)) }
+            let dt = e.timeIntervalSince(ref)
+            return dt >= 0 ? (0, dt) : (1, -dt)
+        }
+        return positions.flatMap { acct, list in list.map { (acct, $0) } }
+            .sorted { rank($0.1) < rank($1.1) }
+    }
     var menuSummary: String {
         guard backendUp, let bal = totalBalance else { return "▲ …" }
         let b = String(format: "$%.2f", bal)
@@ -52,6 +80,10 @@ final class AppStore: ObservableObject {
     func bootstrap() {
         guard timers.isEmpty else { return }
         ensureBackendRunning()
+        let tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.now = Date() }
+        }
+        timers.append(tick)
         schedule(8) { await self.loadFast() }
         schedule(30) { await self.loadHealth() }
         schedule(60) { await self.loadHistory() }
@@ -109,8 +141,12 @@ final class AppStore: ObservableObject {
             accounts = payload.accounts
             let run: RunningPayload = try await api.get("/api/strats/running")
             running = run.running
+            fetchedAt = Date()
             backendUp = true
         } catch { backendUp = false }
+        if let pos: PositionsPayload = try? await api.get("/api/positions") {
+            positions = pos.positions
+        }
     }
 
     func loadCatalog() async {

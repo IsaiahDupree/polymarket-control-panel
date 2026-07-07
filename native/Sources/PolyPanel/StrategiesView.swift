@@ -256,9 +256,12 @@ struct RunningRow: View {
                 Text(strat.displayName)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Theme.text)
-                Text("\(account) · pid \(strat.pid.map(String.init) ?? "?") · up \(strat.etime ?? "?")")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Theme.muted)
+                HStack(spacing: 4) {
+                    Text("\(account) · pid \(strat.pid.map(String.init) ?? "?") ·")
+                    TickingUptime(baseSecs: strat.up_secs, fallback: strat.etime)
+                }
+                .font(.system(size: 10.5))
+                .foregroundStyle(Theme.muted)
             }
             Spacer()
             if strat.strat_key != nil {

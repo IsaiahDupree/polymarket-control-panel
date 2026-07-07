@@ -103,6 +103,33 @@ def test_audit_records_writes(client):
     assert any(e["action"] == "order.place" and e["account"] == "alpha" for e in j["audit"])
 
 
+def test_positions_endpoint_slim_rows(client):
+    j = client.get("/api/positions").json()["positions"]
+    assert set(j.keys()) == {"alpha", "beta"}
+    row = j["alpha"][0]
+    assert row["title"] == "Will BTC go up?"
+    assert row["endDate"] == "2026-07-07T16:00:00Z"
+    assert row["outcome"] == "Up" and row["curPrice"] == 0.52
+    assert "extra_noise" not in row  # only whitelisted fields pass through
+
+
+def test_running_strats_have_up_secs(client):
+    j = client.get("/api/accounts").json()
+    rows = {r["id"]: r for r in j["accounts"]}
+    assert rows["alpha"]["running_strats"][0]["up_secs"] == 60     # "01:00" = MM:SS
+    assert rows["beta"]["running_strats"][0]["up_secs"] == 10      # "00:10"
+
+
+def test_etime_parsing():
+    import strats
+    assert strats._etime_secs("45") == 45
+    assert strats._etime_secs("02:05") == 125
+    assert strats._etime_secs("01:00:00") == 3600
+    assert strats._etime_secs("2-01:00:00") == 176400
+    assert strats._etime_secs(None) is None
+    assert strats._etime_secs("garbage") is None
+
+
 def test_agent_manifest(client):
     j = client.get("/api/agent/manifest").json()
     assert j["openapi"] == "/openapi.json"

@@ -153,6 +153,7 @@ def agent_manifest():
         },
         "capabilities": {
             "read": ["/api/health", "/api/accounts", "/api/accounts/{id}",
+                     "/api/positions",
                      "/api/accounts/{id}/positions", "/api/accounts/{id}/orders",
                      "/api/markets", "/api/book", "/api/strats/catalog",
                      "/api/strats/running", "/api/strats/summary", "/api/logs",
@@ -232,6 +233,38 @@ def orders(account_id: str):
     return {"open_orders": _safe(clients.open_orders, account_id)}
 
 
+# Fields passed through from data-api positions — enough for P&L rows and
+# countdown timers (endDate) without shipping the whole raw payload.
+_POSITION_FIELDS = ("title", "slug", "eventSlug", "outcome", "size", "avgPrice",
+                    "curPrice", "currentValue", "initialValue", "cashPnl",
+                    "percentPnl", "endDate", "redeemable")
+
+
+def _compute_positions() -> dict:
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(a: dict) -> tuple[str, list]:
+        pos = _safe(publicreads.positions, a["funder"])
+        rows = []
+        if isinstance(pos, list):
+            for p in pos:
+                rows.append({k: p.get(k) for k in _POSITION_FIELDS})
+        return a["id"], rows
+
+    accts = config.ACCOUNTS
+    if not accts:
+        return {}
+    with ThreadPoolExecutor(max_workers=min(8, len(accts))) as ex:
+        return dict(ex.map(one, accts))
+
+
+@app.get("/api/positions")
+def all_positions():
+    """Open positions for every account (slim rows incl. endDate for timers)."""
+    return {"positions": cache.get_or_compute(
+        "positions", settings.CACHE_TTL_SECS, _compute_positions)}
+
+
 # ============================ HISTORY (charts) ==============================
 @app.get("/api/history/balances")
 def history_balances(account: str = "", hours: float = 24):
@@ -244,9 +277,12 @@ def history_balances(account: str = "", hours: float = 24):
 
 
 @app.get("/api/history/strats")
-def history_strats(hours: float = 24):
-    """Live vs paper running-strat counts over time."""
-    return {"hours": hours, "series": history.strat_series(hours)}
+def history_strats(hours: float = 24, account: str = ""):
+    """Live vs paper running-strat counts over time (all accounts or one)."""
+    if account and account not in config.ACCOUNTS_BY_ID:
+        raise HTTPException(404, "unknown account")
+    return {"hours": hours, "account": account or "total",
+            "series": history.strat_series(hours, account or None)}
 
 
 # ============================ MARKET DATA ===================================

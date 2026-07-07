@@ -47,6 +47,18 @@ def test_strat_series_live_vs_paper(fresh_db):
     history.record(_payload(1, 1), ts=now)
     s = history.strat_series(hours=1)
     assert s[-1]["live"] == 1 and s[-1]["paper"] == 1
+    # per-account filter: alpha has the live strat, beta the paper one
+    a = history.strat_series(hours=1, account_id="alpha")
+    b = history.strat_series(hours=1, account_id="beta")
+    assert a[-1]["live"] == 1 and a[-1]["paper"] == 0
+    assert b[-1]["live"] == 0 and b[-1]["paper"] == 1
+
+
+def test_strat_history_endpoint_account_param(client, fresh_db):
+    history.record(_payload(10.0, 20.0))
+    j = client.get("/api/history/strats", params={"account": "alpha", "hours": 1}).json()
+    assert j["account"] == "alpha" and j["series"][-1]["live"] == 1
+    assert client.get("/api/history/strats", params={"account": "nope"}).status_code == 404
 
 
 def test_latest_and_empty(fresh_db):

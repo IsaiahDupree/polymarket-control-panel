@@ -97,9 +97,7 @@ struct AuditView: View {
                     VStack(spacing: 0) {
                         ForEach(entries) { e in
                             HStack(alignment: .top, spacing: 12) {
-                                Text(e.iso ?? "")
-                                    .font(.system(size: 10.5, design: .monospaced))
-                                    .foregroundStyle(Theme.muted)
+                                ClickableTimestamp(ts: e.ts)
                                     .frame(width: 140, alignment: .leading)
                                 Text(e.action ?? "")
                                     .font(.system(size: 11.5, weight: .bold))

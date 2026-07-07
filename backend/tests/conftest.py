@@ -70,7 +70,12 @@ def mock_stack(monkeypatch):
     monkeypatch.setattr(clients, "cancel", lambda aid, oid: {"canceled": [oid]})
     monkeypatch.setattr(clients, "cancel_all", lambda aid: {"canceled": "all"})
     monkeypatch.setattr(publicreads, "positions",
-                        lambda funder, limit=100: [{"currentValue": "5.50"}, {"currentValue": "1.25"}])
+                        lambda funder, limit=100: [
+                            {"currentValue": "5.50", "title": "Will BTC go up?",
+                             "outcome": "Up", "size": 5, "avgPrice": 0.48,
+                             "curPrice": 0.52, "cashPnl": 0.2, "percentPnl": 8.3,
+                             "endDate": "2026-07-07T16:00:00Z", "extra_noise": "drop-me"},
+                            {"currentValue": "1.25"}])
     monkeypatch.setattr(publicreads, "search_markets",
                         lambda q="", limit=25: [{"question": "Will it rain?", "clobTokenIds": ["t1", "t2"]}])
     monkeypatch.setattr(publicreads, "book", lambda tok: {"bids": [], "asks": []})

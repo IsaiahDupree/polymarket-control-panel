@@ -205,6 +205,29 @@ def stop_all(account_id: str) -> dict:
     return {"stop_files": touched}
 
 
+def _etime_secs(et) -> int | None:
+    """Parse ps-style elapsed time ('SS', 'MM:SS', 'HH:MM:SS', 'DD-HH:MM:SS')
+    into seconds so clients can render live ticking uptimes."""
+    if et is None:
+        return None
+    s = str(et).strip()
+    days = 0
+    if "-" in s:
+        d, s = s.split("-", 1)
+        try:
+            days = int(d)
+        except ValueError:
+            days = 0
+    try:
+        parts = [int(float(x)) for x in s.split(":")]
+    except ValueError:
+        return None
+    secs = 0
+    for p in parts:
+        secs = secs * 60 + p
+    return days * 86400 + secs
+
+
 # ---- running-state (via bot_status.py --json) ----------------------------------
 def _scan() -> list[dict]:
     """Normalize bot_status procs to {pid, module, account, etime, live}."""
@@ -218,7 +241,8 @@ def _scan() -> list[dict]:
         except (TypeError, ValueError):
             continue
         out.append({"pid": pid, "module": p.get("mod"), "account": acct,
-                    "etime": p.get("up"), "live": bool(p.get("live")),
+                    "etime": p.get("up"), "up_secs": _etime_secs(p.get("up")),
+                    "live": bool(p.get("live")),
                     "coin": p.get("coin"), "minutes": p.get("minutes"),
                     "state_dir": state})
     return out
@@ -233,6 +257,7 @@ def running() -> dict:
             continue
         by_acct.setdefault(p["account"], []).append({
             "module": p["module"], "pid": p["pid"], "etime": p["etime"],
+            "up_secs": p.get("up_secs"),
             "live": p["live"], "coin": p.get("coin"), "minutes": p.get("minutes"),
             "strat_key": mod_to_key.get(p["module"]),
             "label": next((s["label"] for s in STRATS if s["module"] == p["module"]), p["module"]),
