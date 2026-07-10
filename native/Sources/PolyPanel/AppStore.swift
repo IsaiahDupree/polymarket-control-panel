@@ -27,6 +27,7 @@ final class AppStore: ObservableObject {
     @Published var sparks: [String: [HistoryPoint]] = [:]
     @Published var sparkChanges: [String: Change] = [:]
     @Published var positions: [String: [Position]] = [:]
+    @Published var bots: [Bot] = []
 
     /// Global 1s heartbeat — drives every countdown, ticking uptime, and
     /// relative timestamp in the app.
@@ -146,6 +147,9 @@ final class AppStore: ObservableObject {
         } catch { backendUp = false }
         if let pos: PositionsPayload = try? await api.get("/api/positions") {
             positions = pos.positions
+        }
+        if let b: BotsPayload = try? await api.get("/api/bots") {
+            bots = b.bots
         }
     }
 

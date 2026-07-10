@@ -8,6 +8,11 @@ let package = Package(
         .executableTarget(
             name: "PolyPanel",
             path: "Sources/PolyPanel"
+        ),
+        .testTarget(
+            name: "PolyPanelTests",
+            dependencies: ["PolyPanel"],
+            path: "Tests/PolyPanelTests"
         )
     ]
 )

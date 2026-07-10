@@ -72,10 +72,19 @@ Reads (`list_accounts`, `balance_history`, `running_strategies`, `search_markets
 ## Tests
 
 ```bash
-cd backend && python3 -m pytest tests -q
+scripts/test-all.sh          # everything (backend + native), same as CI
+cd backend && python3 -m pytest tests -q    # backend only
+cd native && swift test                      # native app only
 ```
 
-27 tests, fully mocked — no network, no credentials, no trading venv required. Covers the API contract, write guards (428s), the tolerant multi-format `.env` cred loader, history recording/downsampling, cache semantics, parallel-polling speed, and the MCP tool surface.
+No network, no credentials, no trading venv required for any of it:
+
+- **Backend unit/API (pytest)** — API contract, write guards (428s), tolerant multi-format `.env` cred loader, history recording/downsampling, per-bot series, launch-command parsing, cache semantics, parallel-polling speed, MCP tool surface.
+- **Backend E2E (pytest)** — boots the real uvicorn process on a free port with a throwaway config and verifies health, dashboard, OpenAPI surface, graceful no-creds degradation, and write guards over actual HTTP.
+- **Dashboard (pytest + node)** — inline JS must parse, and every `/api/...` path the dashboard calls must exist in the OpenAPI schema.
+- **Native app (XCTest)** — tolerant model decoding (numbers-as-strings), window-end parsing from market slugs, ISO/date-only fallbacks, param importance ordering, duration formatting, and position urgency sorting.
+
+CI runs the backend suite on ubuntu and the Swift suite on macos-14 for every push and PR.
 
 ## Layout
 

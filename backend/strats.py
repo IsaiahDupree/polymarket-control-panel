@@ -265,6 +265,73 @@ def running() -> dict:
     return by_acct
 
 
+# ---- per-bot config (parsed from the live process argv) -------------------------
+def parse_command(cmd: str) -> dict:
+    """Extract module, subcommand, and --flag params from a launch command line.
+    This is the bot's ACTUAL running config (flags are the only config store)."""
+    toks = cmd.split()
+    module, sub, params = None, None, {}
+    i = 0
+    for j, t in enumerate(toks):
+        if t == "-m" and j + 1 < len(toks):
+            module = toks[j + 1]
+            i = j + 2
+            break
+    if i < len(toks) and not toks[i].startswith("-"):
+        sub = toks[i]
+        i += 1
+    while i < len(toks):
+        t = toks[i]
+        if t.startswith("--"):
+            key = t[2:]
+            if i + 1 < len(toks) and not toks[i + 1].startswith("--"):
+                params[key] = toks[i + 1]
+                i += 2
+            else:
+                params[key] = True
+                i += 1
+        else:
+            i += 1
+    return {"module": module, "sub": sub, "params": params, "command": cmd}
+
+
+def proc_commands(pids: list[int]) -> dict[int, dict]:
+    """{pid: parse_command(...)} for running pids, one ps call for all."""
+    if not pids:
+        return {}
+    try:
+        r = subprocess.run(["ps", "-o", "pid=,command=", "-p", ",".join(map(str, pids))],
+                           capture_output=True, text=True, timeout=10)
+    except Exception:  # noqa: BLE001
+        return {}
+    out: dict[int, dict] = {}
+    for line in r.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        pid_s, _, cmd = line.partition(" ")
+        try:
+            out[int(pid_s)] = parse_command(cmd.strip())
+        except ValueError:
+            continue
+    return out
+
+
+def bots() -> list[dict]:
+    """Every running bot proc with its parsed launch config."""
+    procs = _scan()
+    meta = proc_commands([p["pid"] for p in procs])
+    rows = []
+    for p in procs:
+        m = meta.get(p["pid"], {})
+        rows.append({**p,
+                     "sub": m.get("sub"),
+                     "params": m.get("params", {}),
+                     "command": m.get("command", "")})
+    rows.sort(key=lambda r: (not r["live"], r["account"] or "~", r["module"] or "", r["pid"]))
+    return rows
+
+
 # ---- read-only status helpers ---------------------------------------------------
 def summarize(account_id: str, strat_key: str, timeout: int = 60) -> str:
     if not enabled():

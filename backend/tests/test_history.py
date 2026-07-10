@@ -61,6 +61,30 @@ def test_strat_history_endpoint_account_param(client, fresh_db):
     assert client.get("/api/history/strats", params={"account": "nope"}).status_code == 404
 
 
+def test_bot_series_and_modules(fresh_db):
+    now = time.time()
+    history.record(_payload(1, 1), ts=now - 120)
+    history.record(_payload(1, 1), ts=now)
+    # hold_roller runs live on alpha; late_winner paper on beta
+    hr = history.bot_series(hours=1, module="hold_roller")
+    assert hr[-1]["live"] == 1 and hr[-1]["paper"] == 0
+    lw = history.bot_series(hours=1, account_id="beta", module="late_winner")
+    assert lw[-1]["live"] == 0 and lw[-1]["paper"] == 1
+    assert history.bot_series(hours=1, module="nope") == []
+    assert set(history.modules()) == {"hold_roller", "late_winner"}
+    assert history.modules("alpha") == ["hold_roller"]
+
+
+def test_bots_history_endpoint(client, fresh_db):
+    history.record(_payload(10.0, 20.0))
+    j = client.get("/api/history/bots",
+                   params={"module": "late_winner", "hours": 1}).json()
+    assert j["module"] == "late_winner"
+    assert j["series"][-1]["paper"] == 1
+    assert "late_winner" in j["modules"]
+    assert client.get("/api/history/bots", params={"account": "nope"}).status_code == 404
+
+
 def test_latest_and_empty(fresh_db):
     assert history.latest("alpha") is None
     assert history.balance_series("alpha", 24) == []

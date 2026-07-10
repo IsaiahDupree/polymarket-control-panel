@@ -160,6 +160,54 @@ def strat_series(hours: float = 24, account_id: str | None = None) -> list[dict]
     return [{"ts": r[0], "live": int(r[1] or 0), "paper": int(r[2] or 0)} for r in rows]
 
 
+def bot_series(hours: float = 24, account_id: str | None = None,
+               module: str | None = None) -> list[dict]:
+    """Instance counts over time for a specific bot module (or any filter
+    combo), split live/paper. Uses strat_snapshots (one row per proc per
+    snapshot), normalizing by snapshots-per-bucket so counts are averages."""
+    since = time.time() - hours * 3600
+    step = _bucket(hours)
+    where, params = ["ts>=?"], [step, step, since]
+    if account_id:
+        where.append("account_id=?")
+        params.append(account_id)
+    if module:
+        where.append("module=?")
+        params.append(module)
+    conn = db()
+    with _LOCK:
+        cur = conn.execute(
+            f"""SELECT CAST(ts/? AS INT)*? AS bucket, COUNT(DISTINCT ts) AS nts,
+                       SUM(live) AS lv, COUNT(*) AS total
+                FROM strat_snapshots WHERE {' AND '.join(where)}
+                GROUP BY bucket ORDER BY bucket""",
+            params)
+        rows = cur.fetchall()
+    out = []
+    for bucket, nts, lv, total in rows:
+        nts = max(1, nts or 1)
+        live = round((lv or 0) / nts)
+        out.append({"ts": bucket, "live": live,
+                    "paper": round(((total or 0) - (lv or 0)) / nts)})
+    return out
+
+
+def modules(account_id: str | None = None, hours: float = 168) -> list[str]:
+    """Distinct bot modules seen recently (for pickers)."""
+    since = time.time() - hours * 3600
+    conn = db()
+    with _LOCK:
+        if account_id:
+            cur = conn.execute(
+                "SELECT DISTINCT module FROM strat_snapshots WHERE ts>=? AND account_id=?",
+                (since, account_id))
+        else:
+            cur = conn.execute(
+                "SELECT DISTINCT module FROM strat_snapshots WHERE ts>=?", (since,))
+        rows = cur.fetchall()
+    return sorted(r[0] for r in rows if r[0])
+
+
 def latest(account_id: str) -> dict | None:
     conn = db()
     with _LOCK:

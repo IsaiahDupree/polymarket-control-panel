@@ -2,6 +2,7 @@ import SwiftUI
 
 enum Tab: String, CaseIterable, Equatable {
     case portfolio = "Portfolio"
+    case bots = "Bots"
     case strategies = "Strategies"
     case markets = "Markets"
     case logs = "Logs"
@@ -20,6 +21,7 @@ struct RootView: View {
                 Group {
                     switch tab {
                     case .portfolio: PortfolioView()
+                    case .bots: BotsView()
                     case .strategies: StrategiesView()
                     case .markets: MarketsView()
                     case .logs: LogsView()

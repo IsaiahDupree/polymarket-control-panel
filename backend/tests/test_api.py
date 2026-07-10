@@ -130,6 +130,36 @@ def test_etime_parsing():
     assert strats._etime_secs("garbage") is None
 
 
+def test_parse_command():
+    import strats
+    p = strats.parse_command(
+        "/venv/bin/python -m edgeos.grid.hold_roller run --buy 0.48 --size 3 "
+        "--complete-set --live")
+    assert p["module"] == "edgeos.grid.hold_roller"
+    assert p["sub"] == "run"
+    assert p["params"]["buy"] == "0.48"
+    assert p["params"]["size"] == "3"
+    assert p["params"]["complete-set"] is True
+    assert p["params"]["live"] is True
+    # no -m module → tolerated
+    assert strats.parse_command("python script.py --x 1")["module"] is None
+
+
+def test_bots_endpoint(client):
+    j = client.get("/api/bots").json()
+    bots = j["bots"]
+    assert len(bots) == 2
+    live_bot = next(b for b in bots if b["live"])
+    assert live_bot["account"] == "alpha"
+    assert live_bot["params"]["buy"] == "0.48"
+    assert live_bot["params"]["live"] is True
+    assert "hold_roller" in live_bot["command"]
+    paper_bot = next(b for b in bots if not b["live"])
+    assert paper_bot["params"]["coin"] == "ETH"
+    # live sorts before paper
+    assert bots[0]["live"] is True
+
+
 def test_agent_manifest(client):
     j = client.get("/api/agent/manifest").json()
     assert j["openapi"] == "/openapi.json"

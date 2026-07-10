@@ -57,7 +57,7 @@ struct PortfolioView: View {
                     store.requestedTab = .strategies
                 }
                 kpi("PAPER STRATS", "\(store.paperCount)") {
-                    store.requestedTab = .strategies
+                    store.requestedTab = .bots
                 }
                 Spacer()
             }

@@ -83,6 +83,13 @@ def mock_stack(monkeypatch):
         {"pid": 111, "mod": "hold_roller", "state": str(_TMP / "state_a"), "up": "01:00", "live": True},
         {"pid": 222, "mod": "late_winner", "state": str(_TMP / "state_b"), "up": "00:10", "live": False},
     ]})
+    monkeypatch.setattr(strats, "proc_commands", lambda pids: {
+        111: strats.parse_command(
+            "/venv/bin/python -m edgeos.grid.hold_roller run --buy 0.48 --size 3 "
+            "--slug-prefix btc-updown-15m --complete-set --live"),
+        222: strats.parse_command(
+            "/venv/bin/python -m edgeos.grid.late_winner --coin ETH --minutes 5 --size 5"),
+    })
     import daemon_sock
     monkeypatch.setattr(daemon_sock, "daemon_alive", lambda sd, timeout=2.0: False)
     cache.invalidate()

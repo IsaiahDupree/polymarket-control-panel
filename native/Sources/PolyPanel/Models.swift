@@ -221,6 +221,37 @@ struct RunningPayload: Decodable {
     let running: [String: [RunningStrat]]
 }
 
+// ---------------- bots ----------------
+struct BotsPayload: Decodable { let bots: [Bot] }
+
+/// One running bot process with its parsed launch config (--flag params).
+struct Bot: Decodable, Identifiable, Hashable {
+    let account: String?
+    let module: String?
+    let sub: String?
+    let pid: Int?
+    let etime: String?
+    let up_secs: Double?
+    let live: Bool?
+    let params: [String: JSONValue]?
+    let command: String?
+
+    var id: String { "\(module ?? "?")-\(pid ?? 0)" }
+    var isLive: Bool { live ?? false }
+
+    /// Params ordered by importance: money-critical first, then alphabetical.
+    var orderedParams: [(key: String, value: JSONValue)] {
+        let priority = ["live", "size", "coin", "minutes", "buy", "floor",
+                        "tilt-size", "max-buys", "min-price", "max-price",
+                        "slug-prefix", "interval"]
+        return (params ?? [:]).sorted { a, b in
+            let ia = priority.firstIndex(of: a.key) ?? Int.max
+            let ib = priority.firstIndex(of: b.key) ?? Int.max
+            return ia != ib ? ia < ib : a.key < b.key
+        }.map { ($0.key, $0.value) }
+    }
+}
+
 // ---------------- markets ----------------
 struct MarketsPayload: Decodable { let markets: [Market] }
 

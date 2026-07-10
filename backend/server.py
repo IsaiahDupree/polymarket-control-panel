@@ -157,7 +157,8 @@ def agent_manifest():
                      "/api/accounts/{id}/positions", "/api/accounts/{id}/orders",
                      "/api/markets", "/api/book", "/api/strats/catalog",
                      "/api/strats/running", "/api/strats/summary", "/api/logs",
-                     "/api/audit", "/api/history/balances", "/api/history/strats"],
+                     "/api/bots", "/api/audit", "/api/history/balances",
+                     "/api/history/strats", "/api/history/bots"],
             "write": ["/api/strats/start", "/api/strats/stop",
                       "/api/accounts/{id}/order", "/api/accounts/{id}/cancel",
                       "/api/accounts/{id}/kill_switch", "/api/profiles"],
@@ -263,6 +264,25 @@ def all_positions():
     """Open positions for every account (slim rows incl. endDate for timers)."""
     return {"positions": cache.get_or_compute(
         "positions", settings.CACHE_TTL_SECS, _compute_positions)}
+
+
+@app.get("/api/bots")
+def all_bots():
+    """Every running bot process (live AND paper) with its parsed launch
+    config — the --flag params ARE the bot's config; there is no other store."""
+    return cache.get_or_compute(
+        "bots", settings.CACHE_TTL_SECS,
+        lambda: {"bots": strats.bots(), "generated_at": time.time()})
+
+
+@app.get("/api/history/bots")
+def history_bots(hours: float = 24, account: str = "", module: str = ""):
+    """Instance-count series for one bot module (or filtered set), live vs paper."""
+    if account and account not in config.ACCOUNTS_BY_ID:
+        raise HTTPException(404, "unknown account")
+    return {"hours": hours, "account": account or "all", "module": module or "all",
+            "series": history.bot_series(hours, account or None, module or None),
+            "modules": history.modules(account or None)}
 
 
 # ============================ HISTORY (charts) ==============================
