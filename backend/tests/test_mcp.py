@@ -15,7 +15,8 @@ import panel_mcp  # noqa: E402
 EXPECTED = {
     # reads
     "health", "list_accounts", "account_detail", "balance_history",
-    "strategy_history", "search_markets", "order_book", "strategy_catalog",
+    "strategy_history", "list_bots", "bot_history",
+    "search_markets", "order_book", "strategy_catalog",
     "running_strategies", "strategy_logs", "audit_trail",
     # guarded writes
     "start_strategy", "stop_strategy", "place_order", "cancel_order", "kill_switch",

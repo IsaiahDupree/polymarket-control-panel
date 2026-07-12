@@ -216,6 +216,7 @@ def account_detail(account_id: str):
         "trades": _safe(clients.trades, account_id),
         "running_strats": strats.running().get(account_id, []),
         "change_24h": history.change_24h(account_id),
+        "last_snapshot": history.latest(account_id),  # freshness of recorded history
     }
 
 

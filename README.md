@@ -8,14 +8,16 @@ Everything runs on `127.0.0.1`. Nothing leaves your machine except the trading c
 
 ## What you get
 
-**Native macOS app** (`native/PolyPanel.app`) — the primary UI. Fully native SwiftUI with Swift Charts, Polymarket-style dark theme, menu-bar extra with live balance + portfolio sparkline, and backend auto-start. Same five tabs as the web dashboard below, plus native confirm dialogs for every real-money action.
+**Native macOS app** (`native/PolyPanel.app`) — the primary UI. Fully native SwiftUI + Swift Charts, Polymarket-style dark theme, menu-bar extra with live balance and portfolio sparkline, backend auto-start, and native confirm dialogs for every real-money action. Six tabs:
 
-**Web dashboard** (`http://127.0.0.1:8799`) — the same UI in the browser (also what remote/AI tooling can screenshot):
-
-- **Portfolio** — total value with 1H/6H/1D/1W/1M/ALL history chart and 24h change, per-account cards with balance sparklines, positions, open orders, running-strategy chips, and a per-account kill switch
+- **Portfolio** — portfolio value with trend-colored history chart (dashed start-baseline, glowing "now" dot, min/max markers, delta-vs-start tooltips), a clickable KPI strip (open P&L, $ in markets, orders, live/paper strats), open positions sorted by resolution time with live countdown chips (yellow < 5m, red < 60s, REDEEM when resolved), strategy-activity chart with clickable LIVE/PAPER legend, and per-account cards whose sparklines open a full detail sheet
+- **Bots** — every running bot (live *and* paper), filterable by account/mode/search, grouped by module with ticking uptimes; selecting one shows its actual launch config parsed from the process (money-critical params first), an instance-count history graph, and its latest log
 - **Strategies** — catalog with parameter forms, exact command preview, paper/LIVE start (LIVE requires an explicit confirm), running list with stop/kill
-- **Markets** — search active markets, view order books
-- **Logs / Audit** — strategy log tails and the append-only audit trail of every state-changing action
+- **Markets / Logs / Audit** — market search + order books, strategy log tails, and the append-only audit trail with relative timestamps
+
+Every chart has its own clickable 1H/6H/1D/1W/1M/ALL range; every timer ticks off a shared 1-second heartbeat.
+
+**Web dashboard** (`http://127.0.0.1:8799`) — a lighter companion UI in the browser with the Portfolio/Strategies/Markets/Logs/Audit tabs (handy for remote viewing and for AI tooling that reads pages).
 
 **History** — a background recorder snapshots balances, positions, and live/paper strategy counts into SQLite every 60s; all charts are backed by `/api/history/*`.
 
@@ -51,7 +53,7 @@ Two equivalent surfaces:
 
 **HTTP API** — full OpenAPI schema at `/openapi.json`, human docs at `/docs`, and a capability summary at `/api/agent/manifest`. Point any tool-using agent at `http://127.0.0.1:8799`.
 
-**MCP server** (`mcp-server/panel_mcp.py`) — 16 tools over stdio. Claude Desktop / Claude Code config:
+**MCP server** (`mcp-server/panel_mcp.py`) — 18 tools over stdio (`pip install -r mcp-server/requirements.txt`). Claude Desktop / Claude Code config:
 
 ```json
 {
@@ -100,8 +102,17 @@ backend/          FastAPI :8799 — API + dashboard + history recorder
   tests/          pytest suite (mocked, CI-safe)
 mcp-server/       MCP stdio server exposing the API as agent tools
 native/           native SwiftUI app (Swift Charts, menu-bar extra) — primary UI
+  Sources/        app code; Tests/ XCTest suite
 config/           accounts.json + panel.env (gitignored; examples provided)
+scripts/          test-all.sh — full local test run, mirrors CI
 ```
+
+## Development
+
+- **Backend**: `cd backend && ./run.sh` (or point `PANEL_PYBIN` at any python with fastapi). Data lives in `backend/data/` (history.db, audit.jsonl, profiles.json) — all gitignored.
+- **Native app**: `cd native && swift build` to compile, `./make_app.sh` to package `PolyPanel.app`, or open `Package.swift` in Xcode to iterate on the UI. The app finds the repo (and the backend) by walking up from its own location, so keep the `.app` inside `native/`.
+- **Web dashboard**: a single dependency-free file, `backend/static/index.html` — edit and reload.
+- Before pushing, `scripts/test-all.sh` runs exactly what CI runs.
 
 ## Disclaimer
 

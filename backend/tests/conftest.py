@@ -48,7 +48,6 @@ sys.path.insert(0, str(BACKEND))
 
 import cache            # noqa: E402
 import clients          # noqa: E402
-import config           # noqa: E402
 import history          # noqa: E402
 import publicreads      # noqa: E402
 import server           # noqa: E402

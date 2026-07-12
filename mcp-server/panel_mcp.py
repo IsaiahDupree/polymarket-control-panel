@@ -95,6 +95,21 @@ def order_book(token_id: str) -> str:
 
 
 @mcp.tool()
+def list_bots() -> str:
+    """Every running bot process (live AND paper) with its parsed launch
+    config — the --flag params are the bot's actual running configuration."""
+    return json.dumps(_get("/api/bots"))
+
+
+@mcp.tool()
+def bot_history(module: str = "", account_id: str = "", hours: float = 24) -> str:
+    """Instance-count time series for a bot module (live vs paper), optionally
+    scoped to one account. Also returns the list of known modules."""
+    return json.dumps(_get("/api/history/bots",
+                           module=module, account=account_id, hours=hours))
+
+
+@mcp.tool()
 def strategy_catalog() -> str:
     """Available strategies with their parameter schemas (name, flag, type, default, help)."""
     return json.dumps(_get("/api/strats/catalog"))
