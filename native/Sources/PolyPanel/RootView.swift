@@ -111,6 +111,7 @@ struct RootView: View {
                         .foregroundStyle(Theme.text)
                         .lineLimit(3)
                 }
+                .fixedSize(horizontal: false, vertical: true)  // hug text height
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .background(Theme.panel2)
                 .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.border, lineWidth: 1))

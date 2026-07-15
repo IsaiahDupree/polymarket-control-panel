@@ -133,7 +133,47 @@ def audit_trail(n: int = 100) -> str:
     return json.dumps(_get("/api/audit", n=n))
 
 
+@mcp.tool()
+def list_registry() -> str:
+    """The bot registry: named bot→account bindings with desired vs actual
+    state, drift flags, account verification, plus running bots nobody
+    registered (orphans) and procs mapped to no known account (unmapped)."""
+    return json.dumps(_get("/api/registry"))
+
+
 # ============================ writes (guarded) ============================
+@mcp.tool()
+def register_bot(account_id: str, strat_key: str, name: str = "",
+                 params: dict | None = None) -> str:
+    """Register a bot: bind a strategy + params to ONE account. Starts
+    nothing — the new registration is 'off' until set_bot_state is called."""
+    return json.dumps(_post("/api/registry", {
+        "name": name, "account": account_id, "strat": strat_key,
+        "params": params or {}}))
+
+
+@mcp.tool()
+def set_bot_state(registration_id: str, desired: str,
+                  confirm: bool = False, mode: str = "stop") -> str:
+    """Turn a registered bot off/paper/live. desired='live' trades real money
+    and requires confirm=True — get human approval first. Replacing a running
+    instance SIGTERMs the old one; mode='kill' also hard-stops on 'off'."""
+    return json.dumps(_post(f"/api/registry/{registration_id}/state", {
+        "desired": desired, "confirm": confirm, "mode": mode}))
+
+
+@mcp.tool()
+def unregister_bot(registration_id: str, confirm: bool = False) -> str:
+    """Remove a registration. If its bot is running this requires
+    confirm=True and kills the running instances first."""
+    r = httpx.delete(f"{BASE}/api/registry/{registration_id}",
+                     params={"confirm": str(confirm).lower()}, timeout=60)
+    if r.status_code in (409, 428):
+        return json.dumps({"blocked": True, "reason": r.json().get("detail")})
+    r.raise_for_status()
+    return json.dumps(r.json())
+
+
 @mcp.tool()
 def start_strategy(account_id: str, strat_key: str, params: dict | None = None,
                    live: bool = False, dry_run: bool = True, confirm: bool = False) -> str:

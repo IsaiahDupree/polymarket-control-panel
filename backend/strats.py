@@ -248,6 +248,11 @@ def _scan() -> list[dict]:
     return out
 
 
+def scan() -> list[dict]:
+    """Public alias for the normalized process scan (used by the registry)."""
+    return _scan()
+
+
 def running() -> dict:
     """{account_id: [{module,label,pid,etime,strat_key,live,coin,minutes}]}"""
     by_acct: dict[str, list] = {a["id"]: [] for a in ACCOUNTS}

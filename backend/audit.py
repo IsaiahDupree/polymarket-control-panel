@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import json
 import time
-from pathlib import Path
 from threading import Lock
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
-AUDIT_FILE = DATA_DIR / "audit.jsonl"
+import settings
+
+# settings.DATA_DIR respects PANEL_DATA_DIR, so tests write to their own tmp
+# dir instead of polluting the production audit log
+AUDIT_FILE = settings.DATA_DIR / "audit.jsonl"
 _LOCK = Lock()
 
 

@@ -68,6 +68,21 @@ final class APIClient: Sendable {
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
 
+    func delete(_ path: String, query: [String: String] = [:],
+                timeout: TimeInterval = 60) async throws -> [String: Any] {
+        var comps = URLComponents(url: base.appendingPathComponent(path),
+                                  resolvingAgainstBaseURL: false)!
+        if !query.isEmpty {
+            comps.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        var req = URLRequest(url: comps.url!)
+        req.httpMethod = "DELETE"
+        req.timeoutInterval = timeout
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.check(resp, data)
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
     private static func check(_ resp: URLResponse, _ data: Data) throws {
         guard let http = resp as? HTTPURLResponse else { return }
         guard !(200...299).contains(http.statusCode) else { return }

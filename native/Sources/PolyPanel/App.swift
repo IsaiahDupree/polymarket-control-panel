@@ -7,7 +7,9 @@ struct PolyPanelApp: App {
     @StateObject private var store = AppStore()
 
     var body: some Scene {
-        Window("Polymarket Control Panel", id: "main") {
+        // WindowGroup (not Window): reopens on Dock click, which matters when
+        // the menu-bar extra is hidden by a crowded menu bar
+        WindowGroup("Polymarket Control Panel", id: "main") {
             RootView()
                 .environmentObject(store)
                 .frame(minWidth: 1080, minHeight: 700)

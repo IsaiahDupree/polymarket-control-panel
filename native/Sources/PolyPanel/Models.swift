@@ -252,6 +252,53 @@ struct Bot: Decodable, Identifiable, Hashable {
     }
 }
 
+// ---------------- registry ----------------
+struct RegistryPayload: Decodable {
+    let registrations: [Registration]
+    let orphans: [RegInstance]
+    let unmapped: [RegInstance]
+}
+
+/// A named bot→account binding with desired vs actual state.
+struct Registration: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let account: String
+    let strat: String
+    let params: [String: JSONValue]?
+    let desired: String
+    let status: String?          // off | paper | live (actual, from scan)
+    let drift: Bool?             // actual != desired
+    let account_verified: Bool?  // nil while off
+    let instances: [RegInstance]?
+
+    var actualStatus: String { status ?? "off" }
+}
+
+struct RegInstance: Decodable, Identifiable, Hashable {
+    let pid: Int?
+    let module: String?
+    let account: String?
+    let live: Bool?
+    let etime: String?
+    let up_secs: Double?
+    var id: String { "\(module ?? "?")-\(pid ?? 0)" }
+}
+
+extension Strat {
+    /// Map parsed --flag values from a running process onto this strategy's
+    /// catalog param names (flag "slug-prefix" → param "slug_prefix"), so a
+    /// running bot's config can prefill a registration.
+    func paramValues(fromFlags flags: [String: JSONValue]) -> [String: JSONValue] {
+        var out: [String: JSONValue] = [:]
+        for p in params {
+            let flagKey = p.flag.hasPrefix("--") ? String(p.flag.dropFirst(2)) : p.flag
+            if let v = flags[flagKey] { out[p.name] = v }
+        }
+        return out
+    }
+}
+
 // ---------------- markets ----------------
 struct MarketsPayload: Decodable { let markets: [Market] }
 

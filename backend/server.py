@@ -39,6 +39,7 @@ import config
 import history
 import proxy
 import publicreads
+import registry
 import settings
 import strats
 
@@ -157,9 +158,11 @@ def agent_manifest():
                      "/api/accounts/{id}/positions", "/api/accounts/{id}/orders",
                      "/api/markets", "/api/book", "/api/strats/catalog",
                      "/api/strats/running", "/api/strats/summary", "/api/logs",
-                     "/api/bots", "/api/audit", "/api/history/balances",
+                     "/api/bots", "/api/registry", "/api/audit",
+                     "/api/history/balances",
                      "/api/history/strats", "/api/history/bots"],
-            "write": ["/api/strats/start", "/api/strats/stop",
+            "write": ["/api/registry", "/api/registry/{id}/state",
+                      "/api/strats/start", "/api/strats/stop",
                       "/api/accounts/{id}/order", "/api/accounts/{id}/cancel",
                       "/api/accounts/{id}/kill_switch", "/api/profiles"],
         },
@@ -446,6 +449,70 @@ def kill_switch(account_id: str, req: ConfirmReq):
     audit.record("kill_switch", account_id, {"cancelled": cancelled, "stopped": stopped})
     cache.invalidate()
     return {"kill_switch": True, "cancelled": cancelled, "stopped": stopped}
+
+
+# ============================ BOT REGISTRY ==================================
+class RegisterReq(BaseModel):
+    name: str = ""
+    account: str
+    strat: str
+    params: dict = {}
+
+
+class RegStateReq(BaseModel):
+    desired: str            # off | paper | live
+    confirm: bool = False
+    mode: str = "stop"      # stop | kill (how "off" halts the bot)
+
+
+@app.get("/api/registry")
+def registry_list():
+    """Registrations with live status/drift/account verification, plus
+    running bots nobody registered (orphans) and procs whose state dir maps
+    to no known account (unmapped — always worth a look)."""
+    return cache.get_or_compute("registry", settings.CACHE_TTL_SECS,
+                                registry.list_all)
+
+
+@app.post("/api/registry")
+def registry_register(req: RegisterReq):
+    try:
+        reg = registry.register(req.name, req.account, req.strat, req.params)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    cache.invalidate("registry")
+    return {"registered": True, **reg}
+
+
+@app.post("/api/registry/{rid}/state")
+def registry_state(rid: str, req: RegStateReq):
+    # confirm guard (428, inside set_state) outranks the capability check
+    if req.desired == "live" and req.confirm and not strats.enabled():
+        raise HTTPException(503, "strat launching disabled: set EDGEOS_REPO/EDGEOS_PYBIN")
+    try:
+        res = registry.set_state(rid, req.desired, req.confirm, req.mode)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except PermissionError as e:
+        raise HTTPException(428, str(e))
+    cache.invalidate("registry")
+    cache.invalidate("running")
+    cache.invalidate("bots")
+    return res
+
+
+@app.delete("/api/registry/{rid}")
+def registry_unregister(rid: str, confirm: bool = False):
+    try:
+        res = registry.unregister(rid, confirm)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    except RuntimeError as e:
+        raise HTTPException(409, str(e))
+    cache.invalidate("registry")
+    return res
 
 
 # ============================ PROFILES ======================================

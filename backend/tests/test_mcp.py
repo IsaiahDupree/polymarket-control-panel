@@ -17,9 +17,10 @@ EXPECTED = {
     "health", "list_accounts", "account_detail", "balance_history",
     "strategy_history", "list_bots", "bot_history",
     "search_markets", "order_book", "strategy_catalog",
-    "running_strategies", "strategy_logs", "audit_trail",
+    "running_strategies", "strategy_logs", "audit_trail", "list_registry",
     # guarded writes
     "start_strategy", "stop_strategy", "place_order", "cancel_order", "kill_switch",
+    "register_bot", "set_bot_state", "unregister_bot",
 }
 
 
@@ -32,5 +33,6 @@ def test_all_tools_registered():
 def test_write_tools_document_safety():
     tools = asyncio.run(panel_mcp.mcp.list_tools())
     by_name = {t.name: t for t in tools}
-    for name in ("start_strategy", "place_order", "kill_switch"):
+    for name in ("start_strategy", "place_order", "kill_switch",
+                 "set_bot_state", "unregister_bot"):
         assert "confirm" in (by_name[name].description or "").lower()

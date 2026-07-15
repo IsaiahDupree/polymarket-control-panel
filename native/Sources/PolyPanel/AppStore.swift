@@ -28,6 +28,7 @@ final class AppStore: ObservableObject {
     @Published var sparkChanges: [String: Change] = [:]
     @Published var positions: [String: [Position]] = [:]
     @Published var bots: [Bot] = []
+    @Published var registryData: RegistryPayload?
 
     /// Global 1s heartbeat — drives every countdown, ticking uptime, and
     /// relative timestamp in the app.
@@ -151,6 +152,42 @@ final class AppStore: ObservableObject {
         if let b: BotsPayload = try? await api.get("/api/bots") {
             bots = b.bots
         }
+        if let r: RegistryPayload = try? await api.get("/api/registry") {
+            registryData = r
+        }
+    }
+
+    // ---------------- registry actions ----------------
+    func registerBot(name: String, account: String, strat: String,
+                     params: [String: Any]) async -> Bool {
+        do {
+            _ = try await api.post("/api/registry", body: [
+                "name": name, "account": account, "strat": strat, "params": params])
+            toast("Registered \(name.isEmpty ? strat : name) → \(account)", .ok)
+            await loadFast()
+            return true
+        } catch { toast(error.localizedDescription, .error); return false }
+    }
+
+    func setRegistrationState(_ reg: Registration, desired: String,
+                              mode: String = "stop") async {
+        do {
+            let r = try await api.post("/api/registry/\(reg.id)/state", body: [
+                "desired": desired, "confirm": desired == "live", "mode": mode])
+            let n = (r["actions"] as? [Any])?.count ?? 0
+            toast("\(reg.name): \(reg.actualStatus) → \(desired)"
+                  + (n == 0 ? " (already there)" : ""), .ok)
+            await loadFast()
+        } catch { toast(error.localizedDescription, .error) }
+    }
+
+    func unregisterBot(_ reg: Registration) async {
+        do {
+            _ = try await api.delete("/api/registry/\(reg.id)",
+                                     query: ["confirm": "true"])
+            toast("Unregistered \(reg.name)", .ok)
+            await loadFast()
+        } catch { toast(error.localizedDescription, .error) }
     }
 
     func loadCatalog() async {

@@ -7,7 +7,9 @@ struct BotsView: View {
     @EnvironmentObject var store: AppStore
 
     enum Mode: String, CaseIterable { case all = "All", live = "Live", paper = "Paper" }
+    enum ViewMode: String, CaseIterable { case running = "Running", registry = "Registry" }
 
+    @State private var viewMode: ViewMode = .running
     @State private var account = ""       // "" = all
     @State private var mode: Mode = .all
     @State private var search = ""
@@ -42,22 +44,40 @@ struct BotsView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            listPane.frame(width: 360)
-            if let bot = selected {
-                BotDetailPane(bot: bot).id(bot.id)
-                    .frame(maxWidth: .infinity)
-            } else {
-                VStack {
-                    Spacer()
-                    Text("No bots match the filter.")
-                        .font(.system(size: 13)).foregroundStyle(Theme.muted)
-                    Spacer()
+        VStack(spacing: 0) {
+            HStack {
+                Picker("", selection: $viewMode) {
+                    ForEach(ViewMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
-                .frame(maxWidth: .infinity)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 220)
+                Spacer()
+            }
+            .padding(.horizontal, 18).padding(.top, 14)
+
+            switch viewMode {
+            case .registry:
+                RegistryPane()
+            case .running:
+                HStack(alignment: .top, spacing: 16) {
+                    listPane.frame(width: 360)
+                    if let bot = selected {
+                        BotDetailPane(bot: bot).id(bot.id)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        VStack {
+                            Spacer()
+                            Text("No bots match the filter.")
+                                .font(.system(size: 13)).foregroundStyle(Theme.muted)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(18)
             }
         }
-        .padding(18)
     }
 
     // ---------------- list ----------------
@@ -172,6 +192,7 @@ struct BotDetailPane: View {
     @State private var series: [StratPoint] = []
     @State private var logTail = ""
     @State private var logName = ""
+    @State private var showRegister = false
 
     var body: some View {
         ScrollView {
@@ -184,6 +205,13 @@ struct BotDetailPane: View {
         }
         .task(id: hours) { await loadSeries() }
         .task { await loadLog() }
+        .sheet(isPresented: $showRegister) {
+            RegisterSheet(
+                prefillAccount: bot.account,
+                prefillStratKey: catalogKey,
+                prefillParams: catalogStrat?.paramValues(fromFlags: bot.params ?? [:]))
+                .environmentObject(store)
+        }
     }
 
     private var header: some View {
@@ -195,6 +223,11 @@ struct BotDetailPane: View {
                      color: bot.isLive ? Theme.red : Theme.blue)
                 if let sub = bot.sub { Chip(text: sub, color: Theme.muted) }
                 Spacer()
+                if catalogStrat != nil && bot.account != nil {
+                    Button("Register this config") { showRegister = true }
+                        .buttonStyle(PanelButton(small: true))
+                        .help("Create a registry entry pinned to this account with these exact params")
+                }
                 if let key = catalogKey, bot.account != nil {
                     Button("Stop") {
                         Task { await store.stopStrat(account: bot.account!,
@@ -214,9 +247,10 @@ struct BotDetailPane: View {
         .card()
     }
 
-    private var catalogKey: String? {
-        store.catalog.first { $0.module == bot.module }?.key
+    private var catalogStrat: Strat? {
+        store.catalog.first { $0.module == bot.module }
     }
+    private var catalogKey: String? { catalogStrat?.key }
     private var accountName: String {
         store.accounts.first { $0.id == bot.account }?.name ?? bot.account ?? "unmapped"
     }
