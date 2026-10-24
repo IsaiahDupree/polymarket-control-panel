@@ -26,3 +26,12 @@ native/.build/
 native/*.app
 *.xcodeproj
 .DS_Store
+
+# Finance workspace hygiene (2026-10-24): local caches and private material
+.ruff_cache/
+*.key
+*.pem
+id_ed25519
+id_rsa
+.sol-keypair.json
+*-keypair.json
